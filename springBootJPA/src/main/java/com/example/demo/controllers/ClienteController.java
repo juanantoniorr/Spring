@@ -18,6 +18,7 @@ import com.example.demo.entity.Cliente;
 import com.example.demo.entity.dao.ClienteDaoImpl;
 //import org.springframework.web.bind.annotation.SessionAttributes;
 import com.example.demo.entity.dao.IClienteDao;
+import com.example.demo.service.IClienteService;
 
 @Controller
 //Hace una sesion de cliente la cual debe cerrarse al momento de terminar de usarla 
@@ -25,8 +26,8 @@ import com.example.demo.entity.dao.IClienteDao;
 public class ClienteController {
 
 	@Autowired
-	//Varibale que inicia la interfaz IClienteDao para que clienteService pueda usar sus metodos
-	private IClienteDao clienteService;
+	//Varibale que inicia la interfaz IClienteService 
+	private IClienteService clienteService;
 
 	@RequestMapping(value = "/listar", method = RequestMethod.GET)
 	public String listar(Model model) {
