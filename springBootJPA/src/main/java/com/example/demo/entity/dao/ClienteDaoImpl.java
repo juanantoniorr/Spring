@@ -13,6 +13,7 @@ import com.example.demo.entity.Cliente;
 
 public class ClienteDaoImpl implements IClienteDao {
 	@PersistenceContext
+	//Maneja las operaciones crud y otras cosas referentes con la entidad 
 	private EntityManager em;
 	@SuppressWarnings("unchecked")
     @Transactional(readOnly=true)
@@ -24,8 +25,28 @@ public class ClienteDaoImpl implements IClienteDao {
 	@Override
 	@Transactional
 	public void save(Cliente cliente) {
-		em.persist(cliente);
+		if(cliente.getId() != null && cliente.getId() >0) {
+			em.merge(cliente);
+			
+			
+		} else {
+			em.persist(cliente);
+		}
 		
+		
+		
+	}
+	@Override
+	@Transactional(readOnly=true)
+	public Cliente findOne(long id) {
+		
+		return em.find(Cliente.class, id);
+	}
+	@Override
+	@Transactional
+	public void eliminar(Long id) {
+		Cliente cliente = findOne(id);
+		em.remove(cliente);
 		
 	}
 

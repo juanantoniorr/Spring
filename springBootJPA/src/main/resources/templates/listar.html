@@ -12,6 +12,7 @@
 
 <nav class="navbar navbar-expand-md navbar-dark bg-dark">
 <!-- Titulo principal  -->
+
 		<a class="navbar-brand" href="#">Spring Boot</a> 
 		<button class="navbar-toggler" type="button">
 			<span class="navbar-toggler-icon"></span>
@@ -29,6 +30,7 @@
 	<div class="container">
 
 		<h1 class="text-secondary" th:text="${titulo}"></h1>
+		<a th:href="@{/form}"> Crear Cliente</a>
 		<table class="table table-striped">
 			<thead>
 				<tr>
@@ -37,6 +39,8 @@
 					<th>apellido</th>
 					<th>email</th>
 					<th>fecha</th>
+					<th>Editar</th>
+					<th>Eliminar</th>
 				</tr>
 
 			</thead>
@@ -48,7 +52,8 @@
 					<td th:text="${cliente.apellido}"></td>
 					<td th:text="${cliente.email}"></td>
 					<td th:text="${cliente.creacion}"></td>
-
+					<td><a class="btn btn-primary btn-xs" th:href="@{/form/} + ${cliente.id}" th:text="'Editar'" ></a>  </td>
+					<td><a class="btn btn-danger btn-xs" th:href="@{/eliminar/} + ${cliente.id}" th:text="'Eliminar'" ></a>  </td>
 				</tr>
 
 			</tbody>
