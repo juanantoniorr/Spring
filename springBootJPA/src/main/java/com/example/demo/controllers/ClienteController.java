@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
 
 import com.example.demo.entity.Cliente;
-import com.example.demo.entity.dao.ClienteDaoImpl;
 //import org.springframework.web.bind.annotation.SessionAttributes;
 import com.example.demo.entity.dao.IClienteDao;
 import com.example.demo.service.IClienteService;
