@@ -5,14 +5,19 @@ import java.util.Map;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.entity.Cliente;
 //import org.springframework.web.bind.annotation.SessionAttributes;
@@ -29,23 +34,30 @@ public class ClienteController {
 	private IClienteService clienteService;
 
 	@RequestMapping(value = "/listar", method = RequestMethod.GET)
-	public String listar(Model model) {
+	public String listar(Model model, @RequestParam(name="page", defaultValue="0") int page) {
+		Pageable pageRequest = new PageRequest(page,5);
+		Page<Cliente> clientes = clienteService.findAll(pageRequest);
+		
 		model.addAttribute("titulo", "Listado de clientes");
 		//Se crea el atributo clientes que se usa en el front
-		model.addAttribute("clientes", clienteService.findAll());
+		//model.addAttribute("clientes", clienteService.findAll()); esto es sin paginacion
+		model.addAttribute("clientes", clientes);
 		return "listar";
 	}
 	@RequestMapping(value="/form",method=RequestMethod.GET)
 	public String crear(Map<String,Object> model) {
 		Cliente cliente = new Cliente();
 		model.put("cliente", cliente);
-		model.put("titulo", "Formulario del cliente");
+		model.put("header", "Formulario del cliente");
+		model.put("titulo", "Crear");
+		
 		return "form";
 	}
 	@RequestMapping(value="/form", method=RequestMethod.POST)
-	public String guardar (@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status) {//BindingResult verifica las validaciones de la clase entity
+	public String guardar (@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status, RedirectAttributes flash) {//BindingResult verifica las validaciones de la clase entity
 		model.addAttribute("cliente", cliente);
 		model.addAttribute("titulo", "Formulario del cliente");
+		String mensajeFlash = (cliente.getId() != null ? "Cliente editado con éxito" : "Cliente creado con éxito");
 		if(result.hasErrors()) {
 			return "form";
 			
@@ -53,20 +65,28 @@ public class ClienteController {
 		clienteService.save(cliente);
 		//Se completa la sesion del cliente
 		status.setComplete();
+		flash.addFlashAttribute("success", mensajeFlash);
 		return "redirect:listar";
 		
 		
 		
 	}
 	@RequestMapping(value="/form/{id}")
-	public String editar(@PathVariable(value="id") Long id, Map<String, Object> model) {
+	public String editar(@PathVariable(value="id") Long id, Map<String, Object> model, RedirectAttributes flash) {
 		Cliente cliente = null;
 		if(id>0) {
 			cliente = clienteService.findOne(id);
+			model.put("titulo", "Editar");
+			if(cliente==null) {
+				flash.addFlashAttribute("error", "El cliente no existe");
+				return "redirect:/listar";
+			}
+			
 			
 			
 		} else {
-			return "redirect:listar";
+			flash.addFlashAttribute("error", "El cliente no existe");
+			return "redirect:/listar";
 		}
 		model.put("cliente", cliente);
 		model.put("titulo", "Editar cliente");
@@ -76,9 +96,10 @@ public class ClienteController {
 		
 	}
 	@RequestMapping(value="/eliminar/{id}")
-	public String eliminar(@PathVariable(value="id") Long id) {
+	public String eliminar(@PathVariable(value="id") Long id, RedirectAttributes flash) {
 		if(id>0) {
 			clienteService.eliminar(id);
+			flash.addFlashAttribute("success", "Cliente eliminado");
 			
 			
 		} 

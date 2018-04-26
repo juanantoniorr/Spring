@@ -1,67 +1,65 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-<link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" />
-
-<meta charset="UTF-8" />
-<title th:text="${titulo}"></title>
+<head th:replace="layout/layout :: head">
 </head>
 <body>
-<!-- Empieza barra de navegacion  -->
+	<!-- Empieza barra de navegacion, hace referencia a la plantilla layout y al th:fragment header  -->
+	<header th:replace="layout/layout :: header"> </header>
 
-<nav class="navbar navbar-expand-md navbar-dark bg-dark">
-<!-- Titulo principal  -->
+	<!-- Contenedor tabla hace un pading en el eje y de 4 -->
+	<div class="container py-4">
 
-		<a class="navbar-brand" href="#">Spring Boot</a> 
-		<button class="navbar-toggler" type="button">
-			<span class="navbar-toggler-icon"></span>
-		</button>
-		<div class="collapse navbar-collapse">
-			<ul class="navbar-nav mr-auto">
-			
-			<!-- Items de la barra de navegacion  -->
-				<li class="nav-item active"><a class="nav-link" href="#">Home</a></li>
-				<li class="nav-item"><a class="nav-link" href="#about" th:href="@{/listar}">Listar</a></li>
-			</ul>
+		<!-- Aqui empieza el panel  -->
+		<div class="card bg-light">
+			<!-- Titulo del panel  -->
+			<div class="card-header" th:text="${titulo}"></div>
+			<!-- Contenido del panel -->
+			<div class="card-body">
+
+				<table class="table table-striped">
+					<thead class="bg-dark">
+						<tr class="text-info">
+							<th>id</th>
+							<th>nombre</th>
+							<th>apellido</th>
+							<th>email</th>
+							<th>fecha</th>
+							<th>Editar</th>
+							<th>Eliminar</th>
+						</tr>
+
+					</thead>
+					<tbody>
+						<!-- Etiqueta cliente hace referencia a la tabla clientes con thymeleaf donde en
+						el controlador hicimos el model.addAttribute clientes, el "cliente" del for each
+						no hace referencia a nada se puede usar cualquier nombre  -->
+						<tr th:each="cliente: ${clientes}">
+							<td th:text="${cliente.id}"></td>
+							<td th:text="${cliente.nombre}"></td>
+							<td th:text="${cliente.apellido}"></td>
+							<td th:text="${cliente.email}"></td>
+							<td th:text="${cliente.creacion}"></td>
+							<td><a class="btn btn-primary btn-xs"
+								th:href="@{/form/} + ${cliente.id}" th:text="'Editar'"></a></td>
+							<td><a class="btn btn-danger btn-xs"
+								th:href="@{/eliminar/} + ${cliente.id}" th:text="'Eliminar'"></a>
+							</td>
+						</tr>
+
+					</tbody>
+
+
+
+				</table>
+				<h4 class="card-title">
+					<a th:href="@{/form}" class="btn btn-primary btn-xs"> Crear
+						Cliente</a>
+				</h4>
+			</div>
 		</div>
-	</nav>
-	<!-- Contenedor tabla -->
-	<div class="container">
-
-		<h1 class="text-secondary" th:text="${titulo}"></h1>
-		<a th:href="@{/form}"> Crear Cliente</a>
-		<table class="table table-striped">
-			<thead>
-				<tr>
-					<th>id</th>
-					<th>nombre</th>
-					<th>apellido</th>
-					<th>email</th>
-					<th>fecha</th>
-					<th>Editar</th>
-					<th>Eliminar</th>
-				</tr>
-
-			</thead>
-			<tbody>
-			<!-- Etiqueta cliente hace referencia a la tabla clientes con thymeleaf  -->
-				<tr th:each="cliente: ${clientes}">
-					<td th:text="${cliente.id}"></td>
-					<td th:text="${cliente.nombre}"></td>
-					<td th:text="${cliente.apellido}"></td>
-					<td th:text="${cliente.email}"></td>
-					<td th:text="${cliente.creacion}"></td>
-					<td><a class="btn btn-primary btn-xs" th:href="@{/form/} + ${cliente.id}" th:text="'Editar'" ></a>  </td>
-					<td><a class="btn btn-danger btn-xs" th:href="@{/eliminar/} + ${cliente.id}" th:text="'Eliminar'" ></a>  </td>
-				</tr>
-
-			</tbody>
-
-
-
-		</table>
 
 	</div>
+
+	<footer th:replace="layout/layout :: footer"> </footer>
 </body>
 </html>
