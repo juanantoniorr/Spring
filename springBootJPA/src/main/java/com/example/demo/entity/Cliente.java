@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -33,15 +34,22 @@ private String apellido;
 @NotEmpty
 @Email
 private String email;
-@Temporal (TemporalType.DATE)
+//@Temporal (TemporalType.DATE)
 @DateTimeFormat(pattern="yyyy-MM-dd") //Asi puedo especificar mi formato de fecha
 @NotNull
-private Date creacion;
+private String creacion;
 //Invoca al metodo antes de que se escriba todo en la base de datos 
 //@PrePersist
 //public void prePersist() {
 //	creacion = new Date();
 //}
+private String foto;
+public String getFoto() {
+	return foto;
+}
+public void setFoto(String foto) {
+	this.foto = foto;
+}
 public Long getId() {
 	return id;
 }
@@ -66,10 +74,10 @@ public String getEmail() {
 public void setEmail(String email) {
 	this.email = email;
 }
-public Date getCreacion() {
+public String getCreacion() {
 	return creacion;
 }
-public void setCreacion(Date creacion) {
+public void setCreacion(String creacion) {
 	this.creacion = creacion;
 }
 

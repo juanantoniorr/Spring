@@ -1,5 +1,9 @@
 package com.example.demo.controllers;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import javax.validation.Valid;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.bind.support.SessionStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.demo.entity.Cliente;
@@ -54,12 +59,29 @@ public class ClienteController {
 		return "form";
 	}
 	@RequestMapping(value="/form", method=RequestMethod.POST)
-	public String guardar (@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status, RedirectAttributes flash) {//BindingResult verifica las validaciones de la clase entity
+	public String guardar (@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status, RedirectAttributes flash, @RequestParam("file") MultipartFile foto) {//BindingResult verifica las validaciones de la clase entity
 		model.addAttribute("cliente", cliente);
 		model.addAttribute("titulo", "Formulario del cliente");
 		String mensajeFlash = (cliente.getId() != null ? "Cliente editado con éxito" : "Cliente creado con éxito");
 		if(result.hasErrors()) {
 			return "form";
+			
+		}
+		//Si la foto es diferente de empty o null
+		if (!foto.isEmpty()) {
+			
+			//Path directorio = Paths.get("src/main/resources/static/upload/"); Solo se ve dentro del proyecto pero no del server
+			String rootPath = "C://uploads";
+			try {
+				byte[] bytes = foto.getBytes();
+				Path rutaCompleta= Paths.get(rootPath + "/" + foto.getOriginalFilename());
+				Files.write(rutaCompleta, bytes);
+				flash.addFlashAttribute("info", "Has subido correctamente " + foto.getOriginalFilename() );
+				cliente.setFoto(foto.getOriginalFilename());
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			}
 			
 		}
 		clienteService.save(cliente);
