@@ -26,6 +26,7 @@
 							<th>fecha</th>
 							<th>Editar</th>
 							<th>Eliminar</th>
+							<th>Ver</th>
 						</tr>
 
 					</thead>
@@ -41,9 +42,16 @@
 							<td th:text="${cliente.creacion}"></td>
 							<td><a class="btn btn-primary btn-xs"
 								th:href="@{/form/} + ${cliente.id}" th:text="'Editar'"></a></td>
+								<!-- Hago la peticion http a form/ y mando el id cliente
+								luego lo recibe el controlador y retorna el html que le digo -->
 							<td><a class="btn btn-danger btn-xs"
 								th:href="@{/eliminar/} + ${cliente.id}" th:text="'Eliminar'"></a>
 							</td>
+							
+							<td><a class="btn btn-info btn-xs"
+								th:href="@{/ver/} + ${cliente.id}" th:text="'Ver'"></a>
+							</td>
+							
 						</tr>
 
 					</tbody>

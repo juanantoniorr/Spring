@@ -38,153 +38,145 @@ import com.example.demo.entity.Cliente;
 //import org.springframework.web.bind.annotation.SessionAttributes;
 import com.example.demo.entity.dao.IClienteDao;
 import com.example.demo.service.IClienteService;
+import com.example.demo.service.IUploadFileService;
 
 @Controller
-//Hace una sesion de cliente la cual debe cerrarse al momento de terminar de usarla 
+// Hace una sesion de cliente la cual debe cerrarse al momento de terminar de
+// usarla
 @SessionAttributes("cliente")
 public class ClienteController {
 
 	@Autowired
-	//Varibale que inicia la interfaz IClienteService 
+	// Varibale que inicia la interfaz IClienteService
 	private IClienteService clienteService;
-	//Con esto le digo que me muestre en el log lo que yo le pida
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	// Inyecto la interfaz IUploadFileService porque la declare como @Service
+	@Autowired
+	private IUploadFileService uploadFileService;
 	
 	
-	@GetMapping(value="/uploads/{filename:.+}")
-	public ResponseEntity<Resource> verFoto(@PathVariable String filename){
-		Path pathFoto = Paths.get("uploads").resolve(filename).toAbsolutePath();
-		log.info("path foto" + pathFoto);
-		Resource recurso = null;
-		try {
-		recurso = new UrlResource(pathFoto.toUri());
-		if (!recurso.exists() || !recurso.isReadable()) {
-			throw new RuntimeException("no se puede cargar la imagen " + pathFoto.toString());
+	
+	@GetMapping (value = "/ver/{id}")
+	//Con el @PathVariable especifico que puede cambiar el id en la url
+	//El map es para mapear con llave valor con la vista, en este caso titulo en la vista le cambio la variable a Ver cliente
+	public String ver(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
+		Cliente cliente = null;
+		if (id > 0) {
+			cliente = clienteService.findOne(id);
+			//model.put("titulo", "Ver");
+			if (cliente == null) {
+				flash.addFlashAttribute("error", "El cliente no existe");
+				return "redirect:/listar";
+			}
+
+		} else {
+			flash.addFlashAttribute("error", "El cliente no existe");
+			return "redirect:/listar";
 		}
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + recurso.getFilename() + "\"")
-				.body(recurso);
-		
-		
-		
+		model.put("cliente", cliente);
+		model.put("titulo", "Ver cliente");
+		return "ver";
+
 	}
+	
+
+	@GetMapping(value = "/uploads/{filename:.+}")
+	public ResponseEntity<Resource> verFoto(@PathVariable String filename) {
+		Resource recurso = uploadFileService.load(filename);
+
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + recurso.getFilename() + "\"")
+				.body(recurso);
+
+	}
+
 	@RequestMapping(value = "/listar", method = RequestMethod.GET)
-	public String listar(Model model, @RequestParam(name="page", defaultValue="0") int page) {
-		Pageable pageRequest = new PageRequest(page,5);
+	public String listar(Model model, @RequestParam(name = "page", defaultValue = "0") int page) {
+		Pageable pageRequest = new PageRequest(page, 5);
 		Page<Cliente> clientes = clienteService.findAll(pageRequest);
-		
+
 		model.addAttribute("titulo", "Listado de clientes");
-		//Se crea el atributo clientes que se usa en el front
-		//model.addAttribute("clientes", clienteService.findAll()); esto es sin paginacion
+		// Se crea el atributo clientes que se usa en el front
+		// model.addAttribute("clientes", clienteService.findAll()); esto es sin
+		// paginacion
 		model.addAttribute("clientes", clientes);
 		return "listar";
 	}
-	@RequestMapping(value="/form",method=RequestMethod.GET)
-	public String crear(Map<String,Object> model) {
+
+	@RequestMapping(value = "/form", method = RequestMethod.GET)
+	public String crear(Map<String, Object> model) {
 		Cliente cliente = new Cliente();
 		model.put("cliente", cliente);
 		model.put("header", "Formulario del cliente");
 		model.put("titulo", "Crear");
-		
+
 		return "form";
 	}
-	@RequestMapping(value="/form", method=RequestMethod.POST)
-	public String guardar (@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status, RedirectAttributes flash, @RequestParam("file") MultipartFile foto) {//BindingResult verifica las validaciones de la clase entity
+
+	@RequestMapping(value = "/form", method = RequestMethod.POST)
+	public String guardar(@Valid Cliente cliente, BindingResult result, Model model, SessionStatus status,
+			RedirectAttributes flash, @RequestParam("file") MultipartFile foto) {// BindingResult verifica las
+																					// validaciones de la clase entity
+
 		model.addAttribute("cliente", cliente);
 		model.addAttribute("titulo", "Formulario del cliente");
 		String mensajeFlash = (cliente.getId() != null ? "Cliente editado con éxito" : "Cliente creado con éxito");
-		if(result.hasErrors()) {
+		if (result.hasErrors()) {
 			return "form";
-			
+
 		}
-		//Si la foto es diferente de empty o null
+		// Si la foto es diferente de empty o null
 		if (!foto.isEmpty()) {
-			
-			//Path directorio = Paths.get("src/main/resources/static/upload/"); Solo se ve dentro del proyecto pero no del server
-			//String rootPath = "C://uploads";
-			String uniqueFileName = UUID.randomUUID().toString() + "_" + foto.getOriginalFilename();
-			Path rootPath = Paths.get("uploads").resolve(uniqueFileName);
-			Path rootAbsolutePath = rootPath.toAbsolutePath();
-			//Cocateno porque el metodo solo acepta string
-			log.info("absolutePath" + rootAbsolutePath);
-			log.info("rootPath" + rootPath);
-			try {
-				//byte[] bytes = foto.getBytes();
-				//Path rutaCompleta= Paths.get(rootPath + "/" + foto.getOriginalFilename());
-				//Files.write(rutaCompleta, bytes);
-				//flash.addFlashAttribute("info", "Has subido correctamente " + foto.getOriginalFilename() );
-				//cliente.setFoto(foto.getOriginalFilename());
-				
-				Files.copy(foto.getInputStream(), rootAbsolutePath);
-				flash.addFlashAttribute("info", "Has subido correctamente ' " + uniqueFileName + "'");
-				cliente.setFoto(uniqueFileName);
-				
-				
-				
-			} catch (IOException e) {
-				
-				e.printStackTrace();
-			}
-			
+
+			// Path directorio = Paths.get("src/main/resources/static/upload/"); Solo se ve
+			// dentro del proyecto pero no del server
+			// String rootPath = "C://uploads";
+			String uniqueFileName = uploadFileService.copy(foto);
+			flash.addFlashAttribute("info", "Has subido correctamente ' " + uniqueFileName + "'");
+			cliente.setFoto(uniqueFileName);
 		}
 		clienteService.save(cliente);
-		//Se completa la sesion del cliente
+		// Se completa la sesion del cliente
 		status.setComplete();
 		flash.addFlashAttribute("success", mensajeFlash);
 		return "redirect:listar";
-		
-		
-		
+
 	}
-	@RequestMapping(value="/form/{id}")
-	public String editar(@PathVariable(value="id") Long id, Map<String, Object> model, RedirectAttributes flash) {
+
+	@RequestMapping(value = "/form/{id}")
+	public String editar(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
 		Cliente cliente = null;
-		if(id>0) {
+		if (id > 0) {
 			cliente = clienteService.findOne(id);
 			model.put("titulo", "Editar");
-			if(cliente==null) {
+			if (cliente == null) {
 				flash.addFlashAttribute("error", "El cliente no existe");
 				return "redirect:/listar";
 			}
-			
-			
-			
+
 		} else {
 			flash.addFlashAttribute("error", "El cliente no existe");
 			return "redirect:/listar";
 		}
 		model.put("cliente", cliente);
 		model.put("titulo", "Editar cliente");
-		return "form" ;
-		
-		
-		
+		return "form";
+
 	}
-	@RequestMapping(value="/eliminar/{id}")
-	public String eliminar(@PathVariable(value="id") Long id, RedirectAttributes flash) {
-		if(id>0) {
-			Cliente cliente =clienteService.findOne(id);
+
+	@RequestMapping(value = "/eliminar/{id}")
+	public String eliminar(@PathVariable(value = "id") Long id, RedirectAttributes flash) {
+		if (id > 0) {
+			Cliente cliente = clienteService.findOne(id);
 			clienteService.eliminar(id);
 			flash.addFlashAttribute("success", "Cliente eliminado");
-			Path rootPath = Paths.get("uploads").resolve(cliente.getFoto()).toAbsolutePath();
-			File archivo = rootPath.toFile();
-			if (archivo.exists() && archivo.canRead()) {
-				
-				archivo.delete();
-				
+			if (uploadFileService.delete(cliente.getFoto())) {
+				flash.addFlashAttribute("info", "foto" + cliente.getFoto() + " eliminada con exito");
+
 			}
-			
-			
-			
-		} 
+
+		}
 		return "redirect:/listar";
-		
-		
+
 	}
-	
-	
-	
-	
+
 }
