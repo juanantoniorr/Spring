@@ -1,20 +1,30 @@
 package com.example.demo.controllers;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -37,7 +47,29 @@ public class ClienteController {
 	@Autowired
 	//Varibale que inicia la interfaz IClienteService 
 	private IClienteService clienteService;
-
+	//Con esto le digo que me muestre en el log lo que yo le pida
+	private final Logger log = LoggerFactory.getLogger(getClass());
+	
+	
+	@GetMapping(value="/uploads/{filename:.+}")
+	public ResponseEntity<Resource> verFoto(@PathVariable String filename){
+		Path pathFoto = Paths.get("uploads").resolve(filename).toAbsolutePath();
+		log.info("path foto" + pathFoto);
+		Resource recurso = null;
+		try {
+		recurso = new UrlResource(pathFoto.toUri());
+		if (!recurso.exists() || !recurso.isReadable()) {
+			throw new RuntimeException("no se puede cargar la imagen " + pathFoto.toString());
+		}
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + recurso.getFilename() + "\"")
+				.body(recurso);
+		
+		
+		
+	}
 	@RequestMapping(value = "/listar", method = RequestMethod.GET)
 	public String listar(Model model, @RequestParam(name="page", defaultValue="0") int page) {
 		Pageable pageRequest = new PageRequest(page,5);
@@ -71,13 +103,26 @@ public class ClienteController {
 		if (!foto.isEmpty()) {
 			
 			//Path directorio = Paths.get("src/main/resources/static/upload/"); Solo se ve dentro del proyecto pero no del server
-			String rootPath = "C://uploads";
+			//String rootPath = "C://uploads";
+			String uniqueFileName = UUID.randomUUID().toString() + "_" + foto.getOriginalFilename();
+			Path rootPath = Paths.get("uploads").resolve(uniqueFileName);
+			Path rootAbsolutePath = rootPath.toAbsolutePath();
+			//Cocateno porque el metodo solo acepta string
+			log.info("absolutePath" + rootAbsolutePath);
+			log.info("rootPath" + rootPath);
 			try {
-				byte[] bytes = foto.getBytes();
-				Path rutaCompleta= Paths.get(rootPath + "/" + foto.getOriginalFilename());
-				Files.write(rutaCompleta, bytes);
-				flash.addFlashAttribute("info", "Has subido correctamente " + foto.getOriginalFilename() );
-				cliente.setFoto(foto.getOriginalFilename());
+				//byte[] bytes = foto.getBytes();
+				//Path rutaCompleta= Paths.get(rootPath + "/" + foto.getOriginalFilename());
+				//Files.write(rutaCompleta, bytes);
+				//flash.addFlashAttribute("info", "Has subido correctamente " + foto.getOriginalFilename() );
+				//cliente.setFoto(foto.getOriginalFilename());
+				
+				Files.copy(foto.getInputStream(), rootAbsolutePath);
+				flash.addFlashAttribute("info", "Has subido correctamente ' " + uniqueFileName + "'");
+				cliente.setFoto(uniqueFileName);
+				
+				
+				
 			} catch (IOException e) {
 				
 				e.printStackTrace();
@@ -120,8 +165,17 @@ public class ClienteController {
 	@RequestMapping(value="/eliminar/{id}")
 	public String eliminar(@PathVariable(value="id") Long id, RedirectAttributes flash) {
 		if(id>0) {
+			Cliente cliente =clienteService.findOne(id);
 			clienteService.eliminar(id);
 			flash.addFlashAttribute("success", "Cliente eliminado");
+			Path rootPath = Paths.get("uploads").resolve(cliente.getFoto()).toAbsolutePath();
+			File archivo = rootPath.toFile();
+			if (archivo.exists() && archivo.canRead()) {
+				
+				archivo.delete();
+				
+			}
+			
 			
 			
 		} 
